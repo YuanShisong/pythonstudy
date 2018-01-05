@@ -2,7 +2,7 @@
 #
 import socket
 
-# client = socket.socket()  # 声明socket类型,同事生成socket连接对象
+# client = socket.socket()  # 声明socket类型,同时生成socket连接对象
 # client.connect(('127.0.0.1', 9999))
 # # client.send('Hello World')  # TypeError: a bytes-like object is required, not 'str'
 # # python3中必须发送byte类型
