@@ -9,13 +9,21 @@ client.connect(('localhost', 9999))
 while True:
     cmd = input('>>:').strip()
     if not cmd:
-        print('不能输入空')
+        print('can not input blank.')
         continue
     client.send(cmd.encode())
 
-    res = client.recv(1024).decode()
+    length = client.recv(128).decode()  # length of the outcome
+    print(length)
 
-    print(res)
+    out_come = ''
+
+    while len(out_come) < int(length):
+        # print('-------------')
+        out_come += client.recv(8*4*10).decode()
+    else:
+        print('command has no outcome.')
+    print(out_come)
     
 
 client.close()
