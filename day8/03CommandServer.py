@@ -34,7 +34,8 @@ while True:
 
         res = os.popen(data.decode()).read()
 
-        conn.send(str(len(res)).encode())
+        conn.send(str(len(res.encode())).encode())
+        confirm = conn.recv(1024)  # 接收服务端确认信息,解决粘包问题
         conn.send(res.encode())
 
 server.close()
