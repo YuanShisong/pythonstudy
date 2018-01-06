@@ -27,31 +27,36 @@ while True:
                 file = open(filename, 'rb')
                 file_size = os.stat(filename).st_size
                 conn.send(str(file_size).encode())  # send file size
-                conn.recv(1024)  # wait for ack
+                # conn.recv(1024)  # wait for ack
                 for line in file:
                     server_md5.update(line)
                     conn.send(line)
                 else:
                     file.close()
-                    conn.recv(1024)
+                    # conn.recv(1024)
                     conn.send(server_md5.hexdigest().encode())
             else:
                 conn.send(b'None')  # send file size
-                conn.recv(1024)  # wait for ack
+                # conn.recv(1024)  # wait for ack
         elif 'upload' == cmd:
             length = conn.recv(128).decode()  # size of the file
-            conn.send(b'Now start sending the file.')  # solve stick package problem
+            # conn.send(b'Now start sending the file.')  # solve stick package problem
             file_size = int(length)
             recv_size = 0
             file = open(filename + '.upload', 'bw')
             while recv_size < file_size:
-                data = conn.recv(1024)
+                size = 0  # new way of solving stick package problem
+                if file_size - recv_size < 1024:
+                    size = file_size - recv_size  # receive no matter how much left when it's less then 1024 bytes
+                else:
+                    size = 1024
+                data = conn.recv(size)
                 file.write(data)
                 server_md5.update(data)
                 recv_size += len(data)
             else:
                 file.close()
-                conn.send(b'send md5 code in')  # solve stick package problem
+                # conn.send(b'send md5 code in')  # solve stick package problem
                 client_md5 = conn.recv(1024).decode()
                 print(server_md5.hexdigest())
                 if client_md5 != server_md5.hexdigest():  # check md5 code
