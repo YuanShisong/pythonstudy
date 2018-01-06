@@ -1,68 +1,40 @@
-
 import socket, hashlib, os
-
 client = socket.socket()
-
 client.connect(('localhost', 9999))
-md5 = hashlib.md5()
-
-
-def send_to_server(client, msg):
-    '''
-    check if server is ready
-    :param client:
-    :param msg:
-    :return: True or False
-    '''
-    client.send(msg.encode(encoding='utf-8'))
-    rtn = client.recv(50)
-    print(rtn)
-    if rtn == b'ok':
-        return True
-    else:
-        return False
-
-
 while True:
-    operation = input('Do you wanna upload or download ? >>:').strip()
-    if not operation:
+    cmd = input('>>:').strip()  # input operation and filename like 'download test.txt'
+    if not cmd:
         print('can not input blank.')
         continue
-    elif 'upload' == operation:
-        filename = ''
-        if send_to_server(client, operation):
-            filename = input('Server is ready, please type in the filename of which you wanna upload:').strip()
-        # print(filename)
-        isfile = os.path.isfile(filename)
-        if isfile:
-            readin = open(filename, encoding='utf-8').read()  # read is all in once for now
-            # print(content)
-            cont = readin.encode(encoding='utf-8')  # get md5 code of upload file
-            # print(b)
-            md5.update(readin.encode(encoding='utf-8'))
-            # print(md5.hexdigest())
-            code = md5.hexdigest()
-            # print(code)
-            send_to_server(client, code)
-            if not send_to_server(client, filename):  # send filename
-                exit('Fail to send file name.')
+    client.send(cmd.encode())
+    opt, filename = cmd.split(' ')
+    local_md5 = hashlib.md5()
+    if 'download' == opt:
+        length = client.recv(128).decode()  # size of the file
+        if 'None' == length:
+            print('File does not exist.')
+        else:
+            client.send(b'Now start sending the file.')  # solve stick package problem
+            file_size = int(length)
+            # print(file_size)
+            recv_size = 0
+            file = open(filename + '.new', 'bw')
+            while recv_size < file_size:
+                data = client.recv(1024)
+                file.write(data)
+                local_md5.update(data)
+                recv_size += len(data)
+            else:
+                file.close()
+                # print(recv_size)  # file size not equal on Windows ??? No, it's because of the stick package problem, cost me one Hour FFF.
+                client.send(b'send md5 code in')  # solve stick package problem
+                sever_md5 = client.recv(1024).decode()
+                if sever_md5 != local_md5.hexdigest():  # check md5 code
+                    print('md5 code not equal.')
+                else:
+                    print('File transfer finished and md5 ok.')
 
-            length = os.stat(filename).st_size
-            print(length)
-            if send_to_server(client, str(length)):
-                print('a')
-                client.send(cont)
-
-    elif 'download' == operation:
-        filename = input('Please type in the filename of which you wanna download:').strip()
+    elif 'upload' == opt:
         pass
-    else:
-        print('Those are the options you can choose from:\n upload, download')
 
 client.close()
-
-isfile = os.path.isfile('test.txt')
-data = open('test.txt', encoding='utf-8').read()
-print(data)
-code = md5.update(data.decode())
-print(code)
